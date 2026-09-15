@@ -1,0 +1,18 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.VC.db
+x64/
+Debug/
+Release/
+
+# openFrameworks generated/build files
+bin/data/results/
+bin/data/*.log
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
