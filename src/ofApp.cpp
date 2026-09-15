@@ -1,26 +1,7 @@
 #include "ofApp.h"
-
-void ofApp::setup() {
-    ofSetWindowTitle("License Plate Reader");
-    ofBackground(20, 20, 30);
-}
-
-void ofApp::update() {}
-
-void ofApp::draw() {
-    ofSetColor(255);
-    ofDrawBitmapStringHighlight(statusMessage, 20, 30);
-}
-
-void ofApp::dragEvent(ofDragInfo dragInfo) {
-    if (!dragInfo.files.empty()) {
-        statusMessage = "Dropped: " + dragInfo.files.front();
-    }
-}
-
-void ofApp::keyPressed(int key) {
-    if (key == 'o' || key == 'O') {
-        ofFileDialogResult result = ofSystemLoadDialog("Select an image");
-        if (result.bSuccess) statusMessage = "Selected: " + result.getPath();
-    }
-}
+void ofApp::setup(){ofSetWindowTitle("License Plate Reader");ofBackground(20,20,30);reader=lpr::LicensePlateReader(lpr::DetectionConfig(),&ocr);}
+void ofApp::update(){}
+void ofApp::draw(){ofSetColor(255);ofDrawBitmapStringHighlight(statusMessage,20,30);if(!hasResult)return;if(originalImage.isAllocated())originalImage.draw(20,60,380,260);if(annotatedImage.isAllocated())annotatedImage.draw(420,60,380,260);if(plateCropImage.isAllocated())plateCropImage.draw(820,60,300,100);ofDrawBitmapString("Original",20,55);ofDrawBitmapString("Detected Plate",420,55);ofDrawBitmapString("Crop",820,55);}
+void ofApp::dragEvent(ofDragInfo dragInfo){if(!dragInfo.files.empty())loadAndProcess(dragInfo.files.front());}
+void ofApp::keyPressed(int key){if(key=='o'||key=='O'){ofFileDialogResult r=ofSystemLoadDialog("Select a vehicle image");if(r.bSuccess)loadAndProcess(r.getPath());}}
+void ofApp::loadAndProcess(const std::string& path){cv::Mat image=cv::imread(path);if(image.empty()){statusMessage="Could not read image";hasResult=false;return;}originalImage.load(path);auto result=reader.process(image);cv::Mat annotated=image.clone();if(result.found)lpr::LicensePlateReader::annotate(annotated,result.candidate,result.recognized_text);cv::Mat rgb;cv::cvtColor(annotated,rgb,cv::COLOR_BGR2RGB);ofPixels pixels;pixels.setFromPixels(rgb.data,rgb.cols,rgb.rows,OF_PIXELS_RGB);annotatedImage.setFromPixels(pixels);if(result.found&&!result.plate_crop.empty()){cv::Mat cropRgb;cv::cvtColor(result.plate_crop,cropRgb,cv::COLOR_BGR2RGB);ofPixels crop;crop.setFromPixels(cropRgb.data,cropRgb.cols,cropRgb.rows,OF_PIXELS_RGB);plateCropImage.setFromPixels(crop);}statusMessage=result.message+" | OCR: "+result.recognized_text;hasResult=true;}
