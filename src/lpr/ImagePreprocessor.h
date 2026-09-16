@@ -1,10 +1,18 @@
 #pragma once
+
 #include "types.h"
+#include <opencv2/core.hpp>
+
 namespace lpr {
+
 class ImagePreprocessor {
 public:
-    cv::Mat grayscale(const cv::Mat& image) const;
-    cv::Mat edges(const cv::Mat& image, const DetectionConfig& config) const;
-    cv::Mat closeEdges(const cv::Mat& edgeImage, const DetectionConfig& config) const;
+    explicit ImagePreprocessor(DetectorConfig config = {});
+    cv::Mat grayscale(const cv::Mat& input) const;
+    cv::Mat edges(const cv::Mat& input) const;
+    cv::Mat plateMask(const cv::Mat& input) const;
+private:
+    DetectorConfig config_;
 };
-}
+
+} // namespace lpr

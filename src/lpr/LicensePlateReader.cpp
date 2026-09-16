@@ -1,6 +1,20 @@
 #include "LicensePlateReader.h"
+#include <stdexcept>
+#include <utility>
 namespace lpr {
-LicensePlateReader::LicensePlateReader(DetectionConfig c,const OcrEngine* ocr):config_(c),detector_(c),ocr_(ocr){}
-ReaderResult LicensePlateReader::process(const cv::Mat& image) const { ReaderResult out; if(image.empty()){out.message="Input image is empty";return out;} cv::Mat edge=preprocessor_.edges(image,config_); cv::Mat closed=preprocessor_.closeEdges(edge,config_); auto candidates=detector_.detect(image,closed); if(candidates.empty()){out.message="No plate-like candidate found";return out;} out.found=true;out.candidate=candidates.front();out.plate_crop=detector_.cropCandidate(image,out.candidate);out.recognized_text=ocr_?ocr_->recognize(out.plate_crop):"OCR_NOT_CONFIGURED";out.message="Candidate detected";return out; }
-void LicensePlateReader::annotate(cv::Mat& image,const PlateCandidate& c,const std::string& text){cv::Point2f pts[4];c.rectangle.points(pts);for(int i=0;i<4;i++)cv::line(image,pts[i],pts[(i+1)%4],cv::Scalar(0,255,0),3);cv::putText(image,text,pts[0],cv::FONT_HERSHEY_SIMPLEX,.9,cv::Scalar(0,255,0),2);}
+LicensePlateReader::LicensePlateReader(DetectorConfig config, std::unique_ptr<OcrEngine> ocr)
+    : preprocessor_(config), detector_(config), ocr_(std::move(ocr)) {
+    if (!ocr_) throw std::invalid_argument("LicensePlateReader requires an OCR engine");
 }
+PlateResult LicensePlateReader::process(const cv::Mat& image) const {
+    PlateResult result;
+    if (image.empty()) { result.status = "Input image is empty"; return result; }
+    const cv::Mat mask = preprocessor_.plateMask(image);
+    result = detector_.detect(image, mask);
+    if (result.found) {
+        result.text = ocr_->recognize(result.plate_crop);
+        result.status += "; OCR: " + result.text;
+    }
+    return result;
+}
+} // namespace lpr
