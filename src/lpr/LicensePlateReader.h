@@ -1,17 +1,17 @@
 #pragma once
 #include "ImagePreprocessor.h"
-#include "PlateDetector.h"
 #include "OcrEngine.h"
+#include "PlateDetector.h"
+#include "types.h"
+#include <memory>
 namespace lpr {
 class LicensePlateReader {
 public:
-    LicensePlateReader(DetectionConfig config=DetectionConfig(),const OcrEngine* ocr=nullptr);
-    ReaderResult process(const cv::Mat& image) const;
-    static void annotate(cv::Mat& image,const PlateCandidate& candidate,const std::string& text);
+    explicit LicensePlateReader(DetectorConfig config = {}, std::unique_ptr<OcrEngine> ocr = std::make_unique<PlaceholderOcrEngine>());
+    PlateResult process(const cv::Mat& image) const;
 private:
-    DetectionConfig config_;
     ImagePreprocessor preprocessor_;
     PlateDetector detector_;
-    const OcrEngine* ocr_;
+    std::unique_ptr<OcrEngine> ocr_;
 };
-}
+} // namespace lpr

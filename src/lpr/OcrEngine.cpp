@@ -1,6 +1,7 @@
 #include "OcrEngine.h"
 namespace lpr {
-std::string PlaceholderOcr::recognize(const cv::Mat& plate) const {
-    return plate.empty() ? "" : "OCR_NOT_CONFIGURED";
+std::string PlaceholderOcrEngine::recognize(const cv::Mat& plate_image) {
+    if (plate_image.empty()) return {};
+    return "OCR_NOT_CONFIGURED";
 }
-}
+} // namespace lpr
